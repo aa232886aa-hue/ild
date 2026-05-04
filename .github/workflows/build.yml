@@ -24,7 +24,6 @@ jobs:
         mkdir -p app/src/main/assets
         cp index.html app/src/main/assets/index.html
         
-        # יצירת קובץ הגדרות
         echo "android.useAndroidX=true" > gradle.properties
         echo "android.enableJetifier=true" >> gradle.properties
         
@@ -39,60 +38,11 @@ jobs:
             buildTypes { release { minifyEnabled false } } }
         dependencies { implementation 'androidx.appcompat:appcompat:1.6.1' }" > app/build.gradle
         
-        # יצירת ה-Manifest בצורה בטוחה יותר (כדי למנוע שגיאות תווים)
-        cat <<EOF > app/src/main/AndroidManifest.xml
-        <?xml version="1.0" encoding="utf-8"?>
-        <manifest xmlns:android="http://android.com">
-            <uses-permission android:name="android.permission.INTERNET" />
-            <uses-permission android:name="android.permission.RECORD_AUDIO" />
-            <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
-            <application android:label="My App" android:theme="@style/Theme.AppCompat.Light.NoActionBar">
-                <activity android:name="com.example.myapp.MainActivity" android:exported="true">
-                    <intent-filter>
-                        <action android:name="android.intent.action.MAIN" />
-                        <category android:name="android.intent.category.LAUNCHER" />
-                    </intent-filter>
-                </activity>
-            </application>
-        </manifest>
-        EOF
+        # שימוש בשיטה שמונעת מהמערכת לגעת בתוכן - כתיבה ישירה לקובץ
+        printf '<?xml version="1.0" encoding="utf-8"?>\n<manifest xmlns:android="http://android.com">\n    <uses-permission android:name="android.permission.INTERNET" />\n    <uses-permission android:name="android.permission.RECORD_AUDIO" />\n    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />\n    <application android:label="My App" android:theme="@style/Theme.AppCompat.Light.NoActionBar">\n        <activity android:name="com.example.myapp.MainActivity" android:exported="true">\n            <intent-filter>\n                <action android:name="android.intent.action.MAIN" />\n                <category android:name="android.intent.category.LAUNCHER" />\n            </intent-filter>\n        </activity>\n    </application>\n</manifest>' > app/src/main/AndroidManifest.xml
         
-        # יצירת קוד ה-Java
-        cat <<EOF > app/src/main/java/com/example/myapp/MainActivity.java
-        package com.example.myapp;
-        import android.Manifest;
-        import android.content.pm.PackageManager;
-        import android.os.Bundle;
-        import android.webkit.PermissionRequest;
-        import android.webkit.WebChromeClient;
-        import android.webkit.WebView;
-        import android.webkit.WebViewClient;
-        import androidx.appcompat.app.AppCompatActivity;
-        import androidx.core.app.ActivityCompat;
-        import androidx.core.content.ContextCompat;
-        public class MainActivity extends AppCompatActivity {
-            @Override
-            protected void onCreate(Bundle savedInstanceState) {
-                super.onCreate(savedInstanceState);
-                WebView webView = new WebView(this);
-                setContentView(webView);
-                webView.getSettings().setJavaScriptEnabled(true);
-                webView.getSettings().setDomStorageEnabled(true);
-                webView.getSettings().setMediaPlaybackRequiresUserGesture(false);
-                if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-                    ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.RECORD_AUDIO}, 1);
-                }
-                webView.setWebChromeClient(new WebChromeClient() {
-                    @Override
-                    public void onPermissionRequest(final PermissionRequest request) {
-                        request.grant(request.getResources());
-                    }
-                });
-                webView.setWebViewClient(new WebViewClient());
-                webView.loadUrl("file:///android_asset/index.html");
-            }
-        }
-        EOF
+        # כתיבת קוד ה-Java
+        printf 'package com.example.myapp;\nimport android.Manifest;\nimport android.content.pm.PackageManager;\nimport android.os.Bundle;\nimport android.webkit.PermissionRequest;\nimport android.webkit.WebChromeClient;\nimport android.webkit.WebView;\nimport android.webkit.WebViewClient;\nimport androidx.appcompat.app.AppCompatActivity;\nimport androidx.core.app.ActivityCompat;\nimport androidx.core.content.ContextCompat;\npublic class MainActivity extends AppCompatActivity {\n    @Override\n    protected void onCreate(Bundle savedInstanceState) {\n        super.onCreate(savedInstanceState);\n        WebView webView = new WebView(this);\n        setContentView(webView);\n        webView.getSettings().setJavaScriptEnabled(true);\n        webView.getSettings().setDomStorageEnabled(true);\n        webView.getSettings().setMediaPlaybackRequiresUserGesture(false);\n        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {\n            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.RECORD_AUDIO}, 1);\n        }\n        webView.setWebChromeClient(new WebChromeClient() {\n            @Override\n            public void onPermissionRequest(final PermissionRequest request) {\n                request.grant(request.getResources());\n            }\n        });\n        webView.setWebViewClient(new WebViewClient());\n        webView.loadUrl("file:///android_asset/index.html");\n    }\n}' > app/src/main/java/com/example/myapp/MainActivity.java
 
     - name: Setup Gradle
       uses: gradle/gradle-build-action@v2
