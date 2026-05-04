@@ -24,9 +24,9 @@ jobs:
         mkdir -p app/src/main/assets
         cp index.html app/src/main/assets/index.html
         
-        # יצירת קובץ gradle.properties עם הגדרת AndroidX שחסרה
-        echo "android.useAndroidX=true
-        android.enableJetifier=true" > gradle.properties
+        # יצירת קובץ הגדרות
+        echo "android.useAndroidX=true" > gradle.properties
+        echo "android.enableJetifier=true" >> gradle.properties
         
         echo "buildscript { repositories { google(); mavenCentral() }; dependencies { classpath 'com.android.tools.build:gradle:7.3.0' } }
         allprojects { repositories { google(); mavenCentral() } }" > build.gradle
@@ -39,9 +39,27 @@ jobs:
             buildTypes { release { minifyEnabled false } } }
         dependencies { implementation 'androidx.appcompat:appcompat:1.6.1' }" > app/build.gradle
         
-        echo '<?xml version="1.0" encoding="utf-8"?><manifest xmlns:android="http://android.com" package="com.example.myapp"><uses-permission android:name="android.permission.INTERNET"/><uses-permission android:name="android.permission.RECORD_AUDIO"/><uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS"/><application android:label="My App" android:theme="@style/Theme.AppCompat.Light.NoActionBar"><activity android:name=".MainActivity" android:exported="true"><intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter></activity></application></manifest>' > app/src/main/AndroidManifest.xml
+        # יצירת ה-Manifest בצורה בטוחה יותר (כדי למנוע שגיאות תווים)
+        cat <<EOF > app/src/main/AndroidManifest.xml
+        <?xml version="1.0" encoding="utf-8"?>
+        <manifest xmlns:android="http://android.com">
+            <uses-permission android:name="android.permission.INTERNET" />
+            <uses-permission android:name="android.permission.RECORD_AUDIO" />
+            <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+            <application android:label="My App" android:theme="@style/Theme.AppCompat.Light.NoActionBar">
+                <activity android:name="com.example.myapp.MainActivity" android:exported="true">
+                    <intent-filter>
+                        <action android:name="android.intent.action.MAIN" />
+                        <category android:name="android.intent.category.LAUNCHER" />
+                    </intent-filter>
+                </activity>
+            </application>
+        </manifest>
+        EOF
         
-        echo 'package com.example.myapp;
+        # יצירת קוד ה-Java
+        cat <<EOF > app/src/main/java/com/example/myapp/MainActivity.java
+        package com.example.myapp;
         import android.Manifest;
         import android.content.pm.PackageManager;
         import android.os.Bundle;
@@ -73,7 +91,8 @@ jobs:
                 webView.setWebViewClient(new WebViewClient());
                 webView.loadUrl("file:///android_asset/index.html");
             }
-        }' > app/src/main/java/com/example/myapp/MainActivity.java
+        }
+        EOF
 
     - name: Setup Gradle
       uses: gradle/gradle-build-action@v2
