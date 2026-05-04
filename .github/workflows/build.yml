@@ -16,88 +16,37 @@ jobs:
 
     - name: Build Project From Scratch
       run: |
-        # יצירת המבנה
         mkdir -p app/src/main/java/com/example/myapp
         mkdir -p app/src/main/assets
         cp index.html app/src/main/assets/index.html
         
-        # יצירת קבצי הגדרות בסיסיים
         echo "android.useAndroidX=true" > gradle.properties
         echo "include ':app'" > settings.gradle
         
-        # יצירת build.gradle ראשי
-        cat <<EOF > build.gradle
-        buildscript {
-            repositories { google(); mavenCentral() }
-            dependencies { classpath 'com.android.tools.build:gradle:7.3.0' }
-        }
-        allprojects { repositories { google(); mavenCentral() } }
-        EOF
+        # בניית build.gradle ראשי
+        printf "buildscript { repositories { google(); mavenCentral() }; dependencies { classpath 'com.android.tools.build:gradle:7.3.0' } }\nallprojects { repositories { google(); mavenCentral() } }" > build.gradle
         
-        # יצירת build.gradle של האפליקציה
-        cat <<EOF > app/build.gradle
-        plugins { id 'com.android.application' }
-        android {
-            namespace 'com.example.myapp'
-            compileSdk 33
-            defaultConfig { applicationId "com.example.myapp"; minSdk 21; targetSdk 33; versionCode 1; versionName "1.0" }
-        }
-        dependencies { implementation 'androidx.appcompat:appcompat:1.6.1' }
-        EOF
+        # בניית build.gradle של האפליקציה
+        printf "plugins { id 'com.android.application' }\nandroid { namespace 'com.example.myapp'; compileSdk 33; defaultConfig { applicationId 'com.example.myapp'; minSdk 21; targetSdk 33; versionCode 1; versionName '1.0' } }\ndependencies { implementation 'androidx.appcompat:appcompat:1.6.1' }" > app/build.gradle
         
-        # יצירת המניפסט (הפעם עם הגנה על תווים)
-        cat <<EOF > app/src/main/AndroidManifest.xml
-        <?xml version="1.0" encoding="utf-8"?>
-        <manifest xmlns:android="http://android.com">
-            <uses-permission android:name="android.permission.INTERNET" />
-            <uses-permission android:name="android.permission.RECORD_AUDIO" />
-            <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
-            <application android:label="MyApp" android:theme="@style/Theme.AppCompat.Light.NoActionBar">
-                <activity android:name="com.example.myapp.MainActivity" android:exported="true">
-                    <intent-filter>
-                        <action android:name="android.intent.action.MAIN" />
-                        <category android:name="android.intent.category.LAUNCHER" />
-                    </intent-filter>
-                </activity>
-            </application>
-        </manifest>
-        EOF
+        # יצירת המניפסט בצורה הכי פשוטה - שורה אחר שורה כדי לוודא ששום דבר לא נמחק
+        echo '<?xml version="1.0" encoding="utf-8"?>' > app/src/main/AndroidManifest.xml
+        echo '<manifest xmlns:android="http://android.com" package="com.example.myapp">' >> app/src/main/AndroidManifest.xml
+        echo '    <uses-permission android:name="android.permission.INTERNET" />' >> app/src/main/AndroidManifest.xml
+        echo '    <uses-permission android:name="android.permission.RECORD_AUDIO" />' >> app/src/main/AndroidManifest.xml
+        echo '    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />' >> app/src/main/AndroidManifest.xml
+        echo '    <application android:label="App" android:theme="@style/Theme.AppCompat.Light.NoActionBar">' >> app/src/main/AndroidManifest.xml
+        echo '        <activity android:name=".MainActivity" android:exported="true">' >> app/src/main/AndroidManifest.xml
+        echo '            <intent-filter>' >> app/src/main/AndroidManifest.xml
+        echo '                <action android:name="android.intent.action.MAIN" />' >> app/src/main/AndroidManifest.xml
+        echo '                <category android:name="android.intent.category.LAUNCHER" />' >> app/src/main/AndroidManifest.xml
+        echo '            </intent-filter>' >> app/src/main/承担Manifest.xml
+        echo '        </activity>' >> app/src/main/AndroidManifest.xml
+        echo '    </application>' >> app/src/main/AndroidManifest.xml
+        echo '</manifest>' >> app/src/main/AndroidManifest.xml
 
         # יצירת קוד ה-Java
-        cat <<EOF > app/src/main/java/com/example/myapp/MainActivity.java
-        package com.example.myapp;
-        import android.Manifest;
-        import android.os.Bundle;
-        import android.webkit.PermissionRequest;
-        import android.webkit.WebChromeClient;
-        import android.webkit.WebView;
-        import android.webkit.WebViewClient;
-        import androidx.appcompat.app.AppCompatActivity;
-        import androidx.core.app.ActivityCompat;
-        import androidx.core.content.ContextCompat;
-        import android.content.pm.PackageManager;
-        public class MainActivity extends AppCompatActivity {
-            @Override
-            protected void onCreate(Bundle savedInstanceState) {
-                super.onCreate(savedInstanceState);
-                WebView webView = new WebView(this);
-                setContentView(webView);
-                webView.getSettings().setJavaScriptEnabled(true);
-                webView.getSettings().setDomStorageEnabled(true);
-                if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-                    ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.RECORD_AUDIO}, 1);
-                }
-                webView.setWebChromeClient(new WebChromeClient() {
-                    @Override
-                    public void onPermissionRequest(final PermissionRequest request) {
-                        request.grant(request.getResources());
-                    }
-                });
-                webView.setWebViewClient(new WebViewClient());
-                webView.loadUrl("file:///android_asset/index.html");
-            }
-        }
-        EOF
+        printf "package com.example.myapp;\nimport android.Manifest;\nimport android.os.Bundle;\nimport android.webkit.*;\nimport androidx.appcompat.app.AppCompatActivity;\nimport androidx.core.app.ActivityCompat;\nimport androidx.core.content.ContextCompat;\nimport android.content.pm.PackageManager;\npublic class MainActivity extends AppCompatActivity {\n    protected void onCreate(Bundle saved) {\n        super.onCreate(saved);\n        WebView w = new WebView(this);\n        setContentView(w);\n        w.getSettings().setJavaScriptEnabled(true);\n        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {\n            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.RECORD_AUDIO}, 1);\n        }\n        w.setWebChromeClient(new WebChromeClient() {\n            public void onPermissionRequest(PermissionRequest r) { r.grant(r.getResources()); }\n        });\n        w.setWebViewClient(new WebViewClient());\n        w.loadUrl(\"file:///android_asset/index.html\");\n    }\n}" > app/src/main/java/com/example/myapp/MainActivity.java
 
     - name: Setup Gradle
       uses: gradle/gradle-build-action@v2
